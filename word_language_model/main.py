@@ -6,7 +6,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.onnx
-
+import csv
 import data
 import model
 
@@ -229,3 +229,11 @@ print('=' * 89)
 if len(args.onnx_export) > 0:
     # Export the model in ONNX format.
     export_onnx(args.onnx_export, batch_size=1, seq_len=args.bptt)
+
+
+filename = '20news.csv'
+# takes in csv file name, returns a dict of lists
+def csvparser(filename):
+    file = csv.reader(open(filename))
+    result = {row[0]:row[1:] for row in file if row and row[0]}
+    return result
