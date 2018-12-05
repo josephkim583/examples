@@ -11,6 +11,8 @@ class RNNModel(nn.Module):
         inp = torch.LongTensor([1])
         
         self.encoder = nn.Embedding(ntoken, ninp)
+        print ("Tbhis fucker is ntoken:", ntoken)
+        print ("This is ninp: ", ninp)
         # self.encoder = nn.Embedding.from_pretrained(weight)
         if rnn_type in ['LSTM', 'GRU']:
             self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)
