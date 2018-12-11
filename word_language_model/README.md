@@ -8,7 +8,7 @@ The trained model can then be used by the generate script to generate new text.
 python main.py --cuda --epochs 6        # Train a LSTM on Wikitext-2 with CUDA, reaching perplexity of 117.61
 python main.py --cuda --epochs 6 --tied # Train a tied LSTM on Wikitext-2 with CUDA, reaching perplexity of 110.44
 python main.py --cuda --tied            # Train a tied LSTM on Wikitext-2 with CUDA for 40 epochs, reaching perplexity of 87.17
-python generate.py                      # Generate samples from the trained LSTM model.
+./experiments.sh                        # Trains and runs 3 LSTM on Wikitext-2 with 3 different embedding sets (20news, urban_dictionary, and maas_imdb)
 ```
 
 The model uses the `nn.RNN` module (and its sister modules `nn.GRU` and `nn.LSTM`)
@@ -23,6 +23,7 @@ The `main.py` script accepts the following arguments:
 optional arguments:
   -h, --help         show this help message and exit
   --data DATA        location of the data corpus
+  --emb EMBEDDING    location of the embedding set
   --model MODEL      type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU)
   --emsize EMSIZE    size of word embeddings
   --nhid NHID        number of hidden units per layer
