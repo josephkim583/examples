@@ -1,19 +1,23 @@
 import torch.nn as nn
 import torch
+import csv
+import data
+import model
 
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
-    def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
+    def __init__(self, corpus, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
         super(RNNModel, self).__init__()
         self.drop = nn.Dropout(dropout)
-        weight = torch.FloatTensor([[1, 2.3, 3], [4, 5.1, 6.3]])
-        inp = torch.LongTensor([1])
-        
+
+        pre_embedding = 'urban_dictionary.csv'
+        file = csv.reader(open(pre_embedding))
+        embedding_dict = {row[0]: row[1:] for row in file if row and row[0]}
+
+        ninp = 100
         self.encoder = nn.Embedding(ntoken, ninp)
-        print ("Tbhis fucker is ntoken:", ntoken)
-        print ("This is ninp: ", ninp)
-        # self.encoder = nn.Embedding.from_pretrained(weight)
+
         if rnn_type in ['LSTM', 'GRU']:
             self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)
         else:
@@ -36,14 +40,43 @@ class RNNModel(nn.Module):
                 raise ValueError('When using the tied flag, nhid must be equal to emsize')
             self.decoder.weight = self.encoder.weight
 
+        
+        #Goes through the embedding set, 
+        #looks if any of the words show up in the corpus, 
+        #and if it does show up, update the encoder vector values.
+        
+        # lengthcount = {}
+        # for key,value in embedding_dict.items():
+        #     if (len(value) in lengthcount):
+        #         lengthcount[len(value)] += 1
+        #     else:
+        #         lengthcount[len(value)] = 1
+        # print ("This is lengthcount", lengthcount)
+
+        for key, value in embedding_dict.items():
+            if key in corpus.dictionary.word2idx: 
+                if (len(value) == 100):
+                    value = self.convert_to_int(value) 
+                    vector = torch.FloatTensor([value])
+                    self.encoder.weight.data[corpus.dictionary.word2idx[key]] = vector
+
+        
+
         self.init_weights()
-        # self.encoder.weight = torch.nn.Parameter(weight)
+        # print("encoder: ",self.encoder)
+        # print("encoder.weight: ",self.encoder.weight)
+        # print("encoder.weight.data: ", self.encoder.weight.data[0])
+        # print("encoder.weight.data.uniform: ",self.encoder.weight.data.uniform_)
+
         self.decoder.bias.data.zero_()
-
-
         self.rnn_type = rnn_type
         self.nhid = nhid
         self.nlayers = nlayers
+
+    def convert_to_int(self, string_list):
+        for key,value in enumerate(string_list):
+            string_list[key] = float(value)
+        return (string_list)
 
     def init_weights(self):
         initrange = 0.1
@@ -67,3 +100,5 @@ class RNNModel(nn.Module):
                     weight.new_zeros(self.nlayers, bsz, self.nhid))
         else:
             return weight.new_zeros(self.nlayers, bsz, self.nhid)
+
+    

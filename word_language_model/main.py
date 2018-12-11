@@ -60,6 +60,10 @@ device = torch.device("cuda" if args.cuda else "cpu")
 ###############################################################################
 
 corpus = data.Corpus(args.data)
+# for (key, value) in corpus.dictionary.word2idx.items() :
+#     print (" Dictionary : ", key, value)
+
+# print ("List: ", corpus.dictionary.idx2word)
 
 # Starting from sequential data, batchify arranges the dataset into columns.
 # For instance, with the alphabet as the sequence and batch size 4, we'd get
@@ -92,7 +96,7 @@ test_data = batchify(corpus.test, eval_batch_size)
 ###############################################################################
 
 ntokens = len(corpus.dictionary)
-model = model.RNNModel(args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied).to(device)
+model = model.RNNModel(corpus, args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied).to(device)
 
 criterion = nn.CrossEntropyLoss()
 
@@ -231,9 +235,9 @@ if len(args.onnx_export) > 0:
     export_onnx(args.onnx_export, batch_size=1, seq_len=args.bptt)
 
 
-filename = '20news.csv'
-# takes in csv file name, returns a dict of lists
-def csvparser(filename):
-    file = csv.reader(open(filename))
-    result = {row[0]:row[1:] for row in file if row and row[0]}
-    return result
+# filename = '20news.csv'
+# # takes in csv file name, returns a dict of lists
+# def csvparser(filename):
+#     file = csv.reader(open(filename))
+#     result = {row[0]: torch.FloatTensor(row[1:]) for row in file if row and row[0]}
+#     return result

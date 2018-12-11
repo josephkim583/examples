@@ -1,2 +1,2 @@
 #!/bin/bash
-python3  main.py --epochs 2
+python3  main.py --epochs 4
