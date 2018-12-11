@@ -1,12 +1,32 @@
 import torch.nn as nn
+import torch
+import csv
+import data
+import model
+import operator
 
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
-    def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
+    def __init__(self, embedding, corpus, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
         super(RNNModel, self).__init__()
         self.drop = nn.Dropout(dropout)
+        print ("EMBL ", embedding)
+        file = csv.reader(open(embedding))
+        embedding_dict = {row[0]: row[1:] for row in file if row and row[0]}
+
+        # Get key with max value
+        lengthcount = {}
+        for key,value in embedding_dict.items():
+            if (len(value) in lengthcount):
+                lengthcount[len(value)] += 1
+            else:
+                lengthcount[len(value)] = 1
+
+        ninp = max(lengthcount.items(), key=operator.itemgetter(1))[0]
+
         self.encoder = nn.Embedding(ntoken, ninp)
+
         if rnn_type in ['LSTM', 'GRU']:
             self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)
         else:
@@ -29,11 +49,31 @@ class RNNModel(nn.Module):
                 raise ValueError('When using the tied flag, nhid must be equal to emsize')
             self.decoder.weight = self.encoder.weight
 
+        
+        #Goes through the embedding set, 
+        #looks if any of the words show up in the corpus, 
+        #and if it does show up, update the encoder vector values.
+            
+
         self.init_weights()
 
+        #Update embedding weights
+        for key, value in embedding_dict.items():
+            if key in corpus.dictionary.word2idx: 
+                if (len(value) == ninp):
+                    value = self.convert_to_int(value) 
+                    vector = torch.FloatTensor([value])
+                    self.encoder.weight.data[corpus.dictionary.word2idx[key]] = vector
+
+        self.decoder.bias.data.zero_()
         self.rnn_type = rnn_type
         self.nhid = nhid
         self.nlayers = nlayers
+
+    def convert_to_int(self, string_list):
+        for key,value in enumerate(string_list):
+            string_list[key] = float(value)
+        return (string_list)
 
     def init_weights(self):
         initrange = 0.1
@@ -42,6 +82,8 @@ class RNNModel(nn.Module):
         self.decoder.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, input, hidden):
+        # print (input)
+        # print (self.encoder(input))
         emb = self.drop(self.encoder(input))
         output, hidden = self.rnn(emb, hidden)
         output = self.drop(output)
@@ -55,3 +97,5 @@ class RNNModel(nn.Module):
                     weight.new_zeros(self.nlayers, bsz, self.nhid))
         else:
             return weight.new_zeros(self.nlayers, bsz, self.nhid)
+
+    
